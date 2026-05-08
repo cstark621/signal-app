@@ -16,7 +16,7 @@ function extractAllText(content) {
 }
 
 async function callAnthropic(prompt, system, mcps, key) {
-  const body = { model: "claude-sonnet-4-20250514", max_tokens: 2000, system, messages: [{ role: "user", content: prompt }] };
+  const body = { model: "claude-sonnet-4-5", max_tokens: 2000, system, messages: [{ role: "user", content: prompt }] };
   const headers = { "Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" };
   if (mcps && mcps.length) { body.mcp_servers = mcps; headers["anthropic-beta"] = "mcp-client-2025-04-04"; }
   const r = await fetch(ANTHROPIC, { method: "POST", headers, body: JSON.stringify(body) });
@@ -56,6 +56,6 @@ module.exports = async function handler(req, res) {
     }
     res.status(400).json({ error: "Unknown action" });
   } catch(err) {
-    res.status(500).json({ error: err.message, stack: err.stack });
+    res.status(500).json({ error: err.message });
   }
 }
