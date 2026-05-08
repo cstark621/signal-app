@@ -42,7 +42,7 @@ button.action.primary{background:var(--green);color:#fff;border-color:var(--gree
 .main-body{flex:1;overflow-y:auto;padding:20px 24px}
 textarea#email-body{width:100%;min-height:420px;font-size:13px;line-height:1.75;padding:14px 16px;border:0.5px solid var(--border2);border-radius:var(--radius);background:var(--bg2);color:var(--text);resize:vertical;font-family:var(--font)}
 textarea#email-body:focus{outline:none;border-color:var(--green)}.email-actions{display:flex;gap:8px;margin-top:12px;align-items:center}
-.status-msg{font-size:12px;padding:6px 12px;border-radius:var(--radius)}.status-success{background:var(--green-light);color:var(--green-text)}.status-info{background:var(--blue-light);color:var(--blue)}
+.status-msg{font-size:12px;padding:6px 12px;border-radius:var(--radius)}.status-success{background:var(--green-light);color:var(--green-text)}.status-info{background:var(--blue-light);color:var(--blue)}.status-err{background:#fee2e2;color:#991b1b}
 .ai-table{width:100%;border-collapse:collapse;font-size:13px}
 .ai-table th{text-align:left;padding:6px 8px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;border-bottom:0.5px solid var(--border);background:var(--bg2)}
 .ai-table td{padding:4px 2px;border-bottom:0.5px solid var(--border)}
@@ -69,13 +69,11 @@ textarea#email-body:focus{outline:none;border-color:var(--green)}.email-actions{
 </div></div></div></div>
 <script>
 var PROXY="/api/proxy";
-var PRE=[{id:"692866197546884",name:"Amazing Views"},{id:"981862903506820",name:"Austin Affinity"},{id:"861021045843844",name:"Branson Vacation Rentals"},{id:"1740680377722756",name:"Mountain West Vacation Rentals"},{id:"4106360343291780",name:"The Cohost Company"}];
-var POST=[{id:"2299811031476100",name:"Arrived"},{id:"1585175718061956",name:"Bach Bros"},{id:"5532527688476548",name:"Continuum Management Group"},{id:"5848960913958788",name:"Element"},{id:"8849040398935940",name:"NXT / LJVR"},{id:"8319741480724356",name:"SummitCove"}];
-var KW={"Mountain West Vacation Rentals":["Mountain West"],"Continuum Management Group":["CMG"],"NXT / LJVR":["NXT","LJVR"],"Arrived":["Arrived"],"Bach Bros":["Bach Bros"],"Element":["Element Awayday"],"SummitCove":["SummitCove"],"Amazing Views":["Amazing Views"],"Austin Affinity":["Austin Affinity"],"Branson Vacation Rentals":["Branson"],"The Cohost Company":["Cohost"]};
+var PRE=[{id:"692866197546884",name:"Amazing Views",kws:["Amazing Views"]},{id:"981862903506820",name:"Austin Affinity",kws:["Austin Affinity"]},{id:"861021045843844",name:"Branson Vacation Rentals",kws:["Branson"]},{id:"1740680377722756",name:"Mountain West Vacation Rentals",kws:["Mountain West"]},{id:"4106360343291780",name:"The Cohost Company",kws:["Cohost"]}];
+var POST=[{id:"2299811031476100",name:"Arrived",kws:["Arrived"]},{id:"1585175718061956",name:"Bach Bros",kws:["Bach Bros"]},{id:"5532527688476548",name:"Continuum Management Group",kws:["CMG"]},{id:"5848960913958788",name:"Element",kws:["Element"]},{id:"8849040398935940",name:"NXT / LJVR",kws:["NXT","LJVR"]},{id:"8319741480724356",name:"SummitCove",kws:["SummitCove"]}];
 var S={activeSection:null,selectedProject:null,selectedMeeting:null,meetings:{},actionItems:[]};
-function callProxy(p,m,s){return fetch(PROXY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt:p,mcps:m||[],system:s||"",max_tokens:2000})}).then(function(r){return r.json();}).then(function(d){return(d.content||[]).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("\n");});}
-function safeJSON(t){try{var c=t.replace(/```json/g,"").replace(/```/g,"").trim();return JSON.parse(c);}catch(e){return null;}}
 function el(id){return document.getElementById(id);}
+function post(body){return fetch(PROXY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(r){return r.json();});}
 function renderSidebar(){
   var sb=el("sidebar-scroll");sb.innerHTML="";
   ["pre","post"].forEach(function(sec){
@@ -125,12 +123,12 @@ function selectProject(proj,sec){
   S.selectedProject=proj;S.activeSection=sec;S.selectedMeeting=null;S.meetings[proj.id]="loading";
   el("empty-state").style.display="flex";el("meeting-view").style.display="none";
   renderSidebar();
-  var kws=KW[proj.name]||[proj.name];var seen={};var merged=[];
+  var kws=proj.kws||[proj.name];var seen={};var merged=[];
   var promises=kws.map(function(kw){
-    return callProxy("Use Fathom search_meetings with query "+kw+", recorded_by anyone, max_pages 5. Return ONLY a raw JSON array: [{id:string,title:string,date:string YYYY-MM-DD,url:string}]",["fathom"],"Return ONLY a raw JSON array. No markdown.")
-      .then(function(text){
-        var arr=safeJSON(text);
-        if(Array.isArray(arr)){arr.forEach(function(m){if(m.id&&!seen[String(m.id)]){seen[String(m.id)]=true;merged.push({id:String(m.id),title:m.title,date:m.date,url:m.url});}});}
+    return post({action:"searchCalls",keyword:kw})
+      .then(function(d){
+        var calls=d.calls||[];
+        calls.forEach(function(c){if(c.id&&!seen[c.id]){seen[c.id]=true;merged.push(c);}});
       }).catch(function(){});
   });
   Promise.all(promises).then(function(){
@@ -150,23 +148,27 @@ function selectMeeting(m){
   switchTab("email",document.querySelector(".tab"));
   el("loading-recap").style.display="flex";el("tab-email").style.display="none";el("tab-actions").style.display="none";
   el("email-body").value="";el("email-status").style.display="none";el("sheet-status").style.display="none";
-  var proj=S.selectedProject;
-  var prompt="You have two tasks for Fathom recording_id "+m.id+" ("+m.title+", "+m.date+", project: "+proj.name+", url: "+(m.url||"")+").\n\n"
-    +"1. Call get_meeting_summary for recording_id "+m.id+".\n\n"
-    +"2. Output EXACTLY:\nACTION_ITEMS_JSON:[{\"owner\":\"Name\",\"action\":\"task\",\"due\":\"YYYY-MM-DD or TBD\"}]\n\n"
-    +"Then the email body:\n\nGood Morning All -\n\nThank you to everyone who joined today's "+m.title+". Recording: "+(m.url||"see Fathom")+".\n\nMeeting Headlines:\n- [Topic]: [detail]\n\nMeeting Action Items:\n| Owner | Action Item | Due |\n|-------|-------------|-----|\n| ... | ... | ... |\n\nThank you,\nCurt";
-  callProxy(prompt,["fathom"],"Call get_meeting_summary first. Output ACTION_ITEMS_JSON:[...] on its own line then the full email body using real content.")
-    .then(function(text){
+  post({action:"getSummary",callId:m.id})
+    .then(function(summary){
+      var summaryText=JSON.stringify(summary);
+      var proj=S.selectedProject;
+      var prompt="Draft a meeting recap email for: "+m.title+" ("+m.date+", project: "+proj.name+", recording: "+(m.url||"see Fathom")+").\n\nHere is the full meeting summary:\n\n"+summaryText+"\n\nFirst output action items on one line:\nACTION_ITEMS_JSON:[{\"owner\":\"Name\",\"action\":\"task\",\"due\":\"YYYY-MM-DD or TBD\"}]\n\nThen write the email body EXACTLY like this:\n\nGood Morning All -\n\nThank you to everyone who joined today's "+m.title+". The recording is available here: "+(m.url||"see Fathom")+".\n\nMeeting Headlines:\n- **[Topic]:** [Specific detail from the summary above]\n(include all major topics as bullets - be specific and detailed)\n\nMeeting Action Items:\n| Owner | Action Item | Due |\n|-------|-------------|-----|\n| ... | ... | ... |\n\nThank you,\nCurt";
+      return post({action:"draftEmail",prompt:prompt});
+    })
+    .then(function(d){
+      var text=d.text||"";
       var rx=/ACTION_ITEMS_JSON:([[\s\S]*?])/;
       var match=text.match(rx);
-      var items=match?safeJSON(match[1])||[]:[];
+      var items=[];
+      if(match){try{items=JSON.parse(match[1]);}catch(e){}}
       S.actionItems=items.map(function(a,i){return{id:i,owner:a.owner||"",action:a.action||"",due:a.due||""};});
       var emailBody=text.replace(/ACTION_ITEMS_JSON:\[[\s\S]*?\]\n?/,"").trim();
       el("email-body").value=emailBody;
       renderActionItems();
       el("loading-recap").style.display="none";el("tab-email").style.display="block";
-    }).catch(function(){
-      el("email-body").value="Error generating recap. Please try again.";
+    })
+    .catch(function(e){
+      el("email-body").value="Error: "+e.message;
       el("loading-recap").style.display="none";el("tab-email").style.display="block";
     });
 }
@@ -176,8 +178,8 @@ function updateItem(id,f,v){S.actionItems=S.actionItems.map(function(a){if(a.id=
 function removeItem(id){S.actionItems=S.actionItems.filter(function(a){return a.id!==id;});renderActionItems();}
 function addActionItem(){S.actionItems.push({id:Date.now(),owner:"",action:"",due:""});renderActionItems();}
 function copyEmail(){navigator.clipboard.writeText(el("email-body").value).then(function(){showStatus("email-status","Copied!","info");});}
-function pushToSmartsheet(){var btn=el("btn-smartsheet");btn.disabled=true;btn.innerHTML="<div class=\"spinner\"></div> Pushing...";callProxy("Add these action items to Smartsheet for project "+S.selectedProject.name+" from meeting "+S.selectedMeeting.title+". Find or create sheet called "+S.selectedProject.name+" Action Items with columns Owner, Action Item, Due Date. Items: "+JSON.stringify(S.actionItems),["smartsheet"],"Use Smartsheet MCP. Confirm briefly.").then(function(t){showStatus("sheet-status",t||"Pushed!","success");}).catch(function(){showStatus("sheet-status","Check Smartsheet.","info");}).finally(function(){btn.disabled=false;btn.innerHTML="<i class=\"ti ti-table\"></i> Push to Smartsheet";});}
-function sendEmail(){var btn=el("btn-send");btn.disabled=true;btn.innerHTML="<div class=\"spinner\"></div> Sending...";var body=el("email-body").value;callProxy("Send email to myself subject Meeting Recap "+S.selectedMeeting.title+" body:\n\n"+body+"\n\nUse Microsoft 365.",["m365"],"Use M365 MCP to send. Confirm briefly.").then(function(t){showStatus("email-status",t||"Sent!","success");}).catch(function(){showStatus("email-status","Copy and paste manually.","info");}).finally(function(){btn.disabled=false;btn.innerHTML="<i class=\"ti ti-send\"></i> Send recap";});}
+function pushToSmartsheet(){var btn=el("btn-smartsheet");btn.disabled=true;btn.innerHTML="<div class=\"spinner\"></div> Pushing...";post({action:"mcp",service:"smartsheet",prompt:"Add these action items to Smartsheet for project "+S.selectedProject.name+" from meeting "+S.selectedMeeting.title+". Find or create sheet called "+S.selectedProject.name+" Action Items with columns Owner, Action Item, Due Date. Items: "+JSON.stringify(S.actionItems)}).then(function(d){showStatus("sheet-status",d.text||"Pushed!","success");}).catch(function(){showStatus("sheet-status","Check Smartsheet.","info");}).finally(function(){btn.disabled=false;btn.innerHTML="<i class=\"ti ti-table\"></i> Push to Smartsheet";});}
+function sendEmail(){var btn=el("btn-send");btn.disabled=true;btn.innerHTML="<div class=\"spinner\"></div> Sending...";var body=el("email-body").value;post({action:"mcp",service:"m365",prompt:"Send email to myself subject: Meeting Recap - "+S.selectedMeeting.title+". Body:\n\n"+body}).then(function(d){showStatus("email-status",d.text||"Sent!","success");}).catch(function(){showStatus("email-status","Copy and paste manually.","info");}).finally(function(){btn.disabled=false;btn.innerHTML="<i class=\"ti ti-send\"></i> Send recap";});}
 function showStatus(id,msg,type){var e=el(id);e.textContent=msg;e.className="status-msg status-"+type;e.style.display="inline-block";}
 renderSidebar();
 </script></body></html>
