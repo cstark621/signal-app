@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #ffffff; --bg2: #f7f7f5; --bg3: #f0efe9;
+      --text: #1a1a1a; --text2: #555; --text3: #999;
+      --border: rgba(0,0,0,0.1); --border2: rgba(0,0,0,0.18);
+      --green: #0F6E56; --green-light: #E1F5EE; --green-text: #0F6E56;
+      --amber: #EF9F27; --amber-light: #FAEEDA; --amber-text: #854F0B;
+      --blue: #185FA5; --blue-light: #E6F1FB;
+      --radius: 8px; --font: 'Inter', sans-serif;
+    }
+    body { font-family: var(--font); background: var(--bg3); color: var(--text); height: 100vh; display: flex; }
+    #app { width: 100vw; height: 100vh; display: flex; }
+    #sidebar { width: 240px; background: var(--bg); border-right: 0.5px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
+    .brand { padding: 14px 16px; border-bottom: 0.5px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .brand-icon { width: 30px; height: 30px; border-radius: 7px; background: var(--green); display: flex; align-items: center; justify-content: center; }
+    .brand-icon i { color: var(--green-light); font-size: 16px; }
+    .brand-name { font-size: 16px; font-weight: 600; }
+    .sidebar-scroll { flex: 1; overflow-y: auto; }
+    .section-header { width: 100%; display: flex; align-items: center; justify-content: space-between; background: none; border: none; padding: 10px 16px 6px; cursor: pointer; }
+    .section-label { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text2); }
+    .section-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .proj-item { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; background: none; border: none; border-left: 2px solid transparent; padding: 7px 14px 7px 22px; cursor: pointer; }
+    .proj-item:hover { background: var(--bg2); }
+    .proj-item.active { background: var(--bg2); border-left-color: var(--green); }
+    .proj-item i { font-size: 13px; color: var(--text3); flex-shrink: 0; }
+    .proj-item.active i { color: var(--green); }
+    .proj-item span { font-size: 13px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .proj-item.active span { color: var(--text); font-weight: 500; }
+    .calls-header { padding: 8px 16px 4px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text3); border-top: 0.5px solid var(--border); margin-top: 4px; }
+    .call-item { display: block; width: 100%; text-align: left; background: none; border: none; border-left: 2px solid transparent; padding: 8px 14px 8px 22px; cursor: pointer; }
+    .call-item:hover { background: var(--bg2); }
+    .call-item.active { background: var(--bg2); border-left-color: var(--green); }
+    .call-title { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .call-item.active .call-title { color: var(--green-text); }
+    .call-date { font-size: 11px; color: var(--text3); margin-top: 1px; }
+    .divider { height: 0.5px; background: var(--border); margin: 4px 0; }
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--text3); }
+    .empty-state i { font-size: 36px; color: var(--green); opacity: 0.6; }
+    .empty-state h2 { font-size: 15px; font-weight: 500; color: var(--text2); }
+    .empty-state p { font-size: 13px; }
+    .main-header { padding: 13px 24px; border-bottom: 0.5px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-shrink: 0; }
+    .main-title { font-size: 16px; font-weight: 600; }
+    .main-meta { font-size: 12px; color: var(--text2); margin-top: 3px; display: flex; align-items: center; gap: 10px; }
+    .badge { padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+    .badge-pre { background: var(--amber-light); color: var(--amber-text); }
+    .badge-post { background: var(--green-light); color: var(--green-text); }
+    .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    button.action { display: inline-flex; align-items: center; gap: 5px; background: none; border: 0.5px solid var(--border2); border-radius: var(--radius); padding: 6px 12px; font-size: 12px; font-family: var(--font); cursor: pointer; color: var(--text); }
+    button.action:hover { background: var(--bg2); }
+    button.action:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.action.primary { background: var(--green); color: white; border-color: var(--green); }
+    button.action.primary:hover { background: #0a5c47; }
+    .tabs { display: flex; border-bottom: 0.5px solid var(--border); padding: 0 24px; flex-shrink: 0; }
+    .tab { background: none; border: none; border-bottom: 2px solid transparent; padding: 9px 12px 7px; font-size: 13px; font-family: var(--font); cursor: pointer; color: var(--text2); display: flex; align-items: center; gap: 5px; }
+    .tab.active { color: var(--text); font-weight: 500; border-bottom-color: var(--text); }
+    .main-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+    textarea#email-body { width: 100%; min-height: 420px; font-size: 13px; line-height: 1.75; padding: 14px 16px; border: 0.5px solid var(--border2); border-radius: var(--radius); background: var(--bg2); color: var(--text); resize: vertical; font-family: var(--font); }
+    textarea#email-body:focus { outline: none; border-color: var(--green); }
+    .email-actions { display: flex; gap: 8px; margin-top: 12px; align-items: center; }
+    .status-msg { font-size: 12px; padding: 6px 12px; border-radius: var(--radius); }
+    .status-success { background: var(--green-light); color: var(--green-text); }
+    .status-info { background: var(--blue-light); color: var(--blue); }
+    .ai-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .ai-table th { text-align: left; padding: 6px 8px; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 0.5px solid var(--border); background: var(--bg2); }
+    .ai-table td { padding: 4px 2px; border-bottom: 0.5px solid var(--border); }
+    .ai-table input { width: 100%; border: none; background: transparent; font-size: 13px; font-family: var(--font); color: var(--text); padding: 4px 6px; }
+    .ai-table input:focus { outline: none; background: var(--bg2); border-radius: 4px; }
+    .del-btn { background: none; border: none; cursor: pointer; color: var(--text3); padding: 2px 6px; }
+    .loading { display: flex; align-items: center; gap: 8px; color: var(--text2); font-size: 13px; padding: 40px 0; justify-content: center; }
+    .spinner { width: 14px; height: 14px; border: 2px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    a { color: var(--blue); text-decoration: none; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="brand">
+      <div class="brand-icon"><i class="ti ti-antenna-bars-5"></i></div>
+      <span class="brand-name">Signal</span>
+    </div>
+    <div class="sidebar-scroll" id="sidebar-scroll"></div>
+  </div>
+  <div id="main">
+    <div class="empty-state" id="empty-state">
+      <i class="ti ti-antenna-bars-5"></i>
+      <h2>Welcome to Signal</h2>
+      <p>Select a project to get started</p>
+    </div>
+    <div id="meeting-view" style="display:none; flex-direction:column; height:100%;">
+      <div class="main-header">
+        <div>
+          <div class="main-title" id="meeting-title"></div>
+          <div class="main-meta">
+            <span id="meeting-date"></span>
+            <span class="badge" id="meeting-badge"></span>
+            <a id="meeting-link" href="#" target="_blank" style="display:none">View recording <i class="ti ti-external-link" style="font-size:11px"></i></a>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="action" id="btn-smartsheet" onclick="pushToSmartsheet()"><i class="ti ti-table"></i> Push to Smartsheet</button>
+          <button class="action primary" id="btn-send" onclick="sendEmail()"><i class="ti ti-send"></i> Send recap</button>
+        </div>
+      </div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('email',this)"><i class="ti ti-mail"></i> Recap email</button>
+        <button class="tab" onclick="switchTab('actions',this)"><i class="ti ti-checkbox"></i> Action items</button>
+      </div>
+      <div class="main-body">
+        <div class="loading" id="loading-recap"><div class="spinner"></div> Pulling summary from Fathom and drafting recap…</div>
+        <div id="tab-email" style="display:none">
+          <textarea id="email-body"></textarea>
+          <div class="email-actions">
+            <button class="action" onclick="copyEmail()"><i class="ti ti-copy"></i> Copy</button>
+            <span id="email-status" class="status-msg" style="display:none"></span>
+          </div>
+        </div>
+        <div id="tab-actions" style="display:none">
+          <table class="ai-table">
+            <thead><tr><th>Owner</th><th>Action item</th><th>Due date</th><th></th></tr></thead>
+            <tbody id="action-items-body"></tbody>
+          </table>
+          <button class="action" style="margin-top:10px" onclick="addActionItem()"><i class="ti ti-plus"></i> Add row</button>
+          <span id="sheet-status" class="status-msg" style="display:none; margin-left:8px;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const PROXY="/api/proxy";
+const PRE_CLOSE=[{id:"692866197546884",name:"Amazing Views"},{id:"981862903506820",name:"Austin Affinity"},{id:"861021045843844",name:"Branson Vacation Rentals"},{id:"1740680377722756",name:"Mountain West Vacation Rentals"},{id:"4106360343291780",name:"The Cohost Company"}];
+const POST_CLOSE=[{id:"2299811031476100",name:"Arrived"},{id:"1585175718061956",name:"Bach Bros"},{id:"5532527688476548",name:"Continuum Management Group"},{id:"5848960913958788",name:"Element"},{id:"8849040398935940",name:"NXT / LJVR"},{id:"8319741480724356",name:"SummitCove"}];
+const KEYWORDS={"Mountain West Vacation Rentals":["Mountain West"],"Continuum Management Group":["CMG"],"NXT / LJVR":["NXT","LJVR"],"Arrived":["Arrived"],"Bach Bros":["Bach Bros"],"Element":["Element Awayday"],"SummitCove":["SummitCove"],"Amazing Views":["Amazing Views"],"Austin Affinity":["Austin Affinity"],"Branson Vacation Rentals":["Branson"],"The Cohost Company":["Cohost"]};
+let state={activeSection:null,selectedProject:null,selectedMeeting:null,meetings:{},actionItems:[]};
+async function callProxy(prompt,mcps,system){const r=await fetch(PROXY,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({prompt,mcps:mcps||[],system:system||"",max_tokens:2000})});const d=await r.json();return(d.content||[]).filter(b=>b.type==="text").map(b=>b.text).join("\n");}
+function safeJSON(t){try{return JSON.parse(t.replace(/```json|```/g,"").trim());}catch{return null;}}
+function renderSidebar(){const el=document.getElementById("sidebar-scroll");el.innerHTML="";["pre","post"].forEach(sec=>{const projs=sec==="pre"?PRE_CLOSE:POST_CLOSE;const label=sec==="pre"?"Pre-Close":"Post-Close";const color=sec==="pre"?"#EF9F27":"#0F6E56";const open=state.activeSection===sec;const hdr=document.createElement("button");hdr.className="section-header";hdr.innerHTML=`<span class="section-label"><span class="section-dot" style="background:${color}"></span>${label}</span><i class="ti ti-chevron-${open?"down":"right"}" style="font-size:12px;color:#999"></i>`;hdr.onclick=()=>{state.activeSection=open?null:sec;renderSidebar();};el.appendChild(hdr);if(open){projs.forEach(p=>{const btn=document.createElement("button");btn.className="proj-item"+(state.selectedProject?.id===p.id?" active":"");btn.innerHTML=`<i class="ti ti-building-estate"></i><span>${p.name}</span>`;btn.onclick=()=>selectProject(p,sec);el.appendChild(btn);});if(state.selectedProject&&projs.find(p=>p.id===state.selectedProject.id)){el.appendChild(Object.assign(document.createElement("div"),{className:"divider"}));const meetings=state.meetings[state.selectedProject.id];const hd=document.createElement("div");hd.className="calls-header";hd.textContent=meetings==="loading"?"Fetching calls…":`Calls – ${state.selectedProject.name}`;el.appendChild(hd);if(meetings==="loading"){const ld=document.createElement("div");ld.style.cssText="display:flex;align-items:center;gap:6px;padding:8px 22px;font-size:13px;color:#999";ld.innerHTML='<div class="spinner"></div>';el.appendChild(ld);}else if(!meetings||meetings.length===0){const nm=document.createElement("div");nm.style.cssText="padding:6px 22px;font-size:13px;color:#999";nm.textContent="No recent calls found.";el.appendChild(nm);}else{meetings.forEach(m=>{const btn=document.createElement("button");btn.className="call-item"+(state.selectedMeeting?.id===m.id?" active":"");btn.innerHTML=`<div class="call-title">${m.title}</div><div class="call-date">${m.date}</div>`;btn.onclick=()=>selectMeeting(m);el.appendChild(btn);});}}}el.appendChild(Object.assign(document.createElement("div"),{className:"divider"}));});}
+async function selectProject(proj,sec){state.selectedProject=proj;state.activeSection=sec;state.selectedMeeting=null;state.meetings[proj.id]="loading";document.getElementById("empty-state").style.display="flex";document.getElementById("meeting-view").style.display="none";renderSidebar();try{const kws=KEYWORDS[proj.name]||[proj.name];const seen=new Set();const merged=[];await Promise.all(kws.map(async kw=>{const text=await callProxy(`Use Fathom search_meetings with query "${kw}", recorded_by "anyone", max_pages 5. Return ONLY a raw JSON array (no markdown): [{id:string,title:string,date:string (YYYY-MM-DD),url:string}]`,["fathom"],"Return ONLY a raw JSON array. No markdown.");const arr=safeJSON(text);if(Array.isArray(arr))arr.forEach(m=>{if(m.id&&!seen.has(String(m.id))){seen.add(String(m.id));merged.push({...m,id:String(m.id)});}});}));merged.sort((a,b)=>(b.date||"").localeCompare(a.date||""));state.meetings[proj.id]=merged;}catch(e){state.meetings[proj.id]=[];}renderSidebar();}
+async function selectMeeting(m){state.selectedMeeting=m;state.actionItems=[];renderSidebar();document.getElementById("empty-state").style.display="none";document.getElementById("meeting-view").style.display="flex";document.getElementById("meeting-title").textContent=m.title;document.getElementById("meeting-date").textContent=m.date;const badge=document.getElementById("meeting-badge");badge.textContent=state.activeSection==="pre"?"Pre-Close":"Post-Close";badge.className="badge "+(state.activeSection==="pre"?"badge-pre":"badge-post");const link=document.getElementById("meeting-link");if(m.url){link.href=m.url;link.style.display="inline";}else{link.style.display="none";}switchTab("email",document.querySelector(".tab"));document.getElementById("loading-recap").style.display="flex";document.getElementById("tab-email").style.display="none";document.getElementById("tab-actions").style.display="none";document.getElementById("email-body").value="";document.getElementById("email-status").style.display="none";document.getElementById("sheet-status").style.display="none";try{const text=await callProxy(`You have two tasks for Fathom recording_id ${m.id} ("${m.title}", ${m.date}, project: ${state.selectedProject?.name}, url: ${m.url||""}):\n\n1. Call get_meeting_summary for recording_id ${m.id}.\n\n2. Output EXACTLY:\nACTION_ITEMS_JSON:[{"owner":"Name","action":"task","due":"YYYY-MM-DD or TBD"}]\n\nThen the email body:\n\nGood Morning All -\n\nThank you to everyone who joined today's ${m.title}. The recording is available here: ${m.url||"(see Fathom)"}\n\nMeeting Headlines:\n- [Topic]: [specific detail from summary]\n(one bullet per major topic, use real content)\n\nMeeting Action Items:\n| Owner | Action Item | Due |\n|-------|-------------|-----|\n| ... | ... | ... |\n\nThank you,\nCurt`,["fathom"],"Call get_meeting_summary first. Output ACTION_ITEMS_JSON:[...] on its own line then the full email body using real summary content.");const aiMatch=text.match(/ACTION_ITEMS_JSON:([[sS]*?])/);const items=aiMatch?(safeJSON(aiMatch[1])||[]):[];state.actionItems=items.map((a,i)=>({...a,id:i}));const emailBody=text.replace(/ACTION_ITEMS_JSON:[[sS]*?]
+?/,"").trim();document.getElementById("email-body").value=emailBody;renderActionItems();}catch(e){document.getElementById("email-body").value="Error generating recap. Please try again.";}document.getElementById("loading-recap").style.display="none";document.getElementById("tab-email").style.display="block";}
+function switchTab(tab,btn){document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));if(btn)btn.classList.add("active");document.getElementById("tab-email").style.display=tab==="email"?"block":"none";document.getElementById("tab-actions").style.display=tab==="actions"?"block":"none";}
+function renderActionItems(){const tbody=document.getElementById("action-items-body");tbody.innerHTML="";state.actionItems.forEach(a=>{const tr=document.createElement("tr");tr.innerHTML=`<td style="width:100px"><input value="${a.owner||""}" onchange="updateItem(${a.id},'owner',this.value)"/></td><td><input value="${a.action||""}" onchange="updateItem(${a.id},'action',this.value)"/></td><td style="width:110px"><input value="${a.due||""}" onchange="updateItem(${a.id},'due',this.value)"/></td><td style="width:30px"><button class="del-btn" onclick="removeItem(${a.id})"><i class="ti ti-x"></i></button></td>`;tbody.appendChild(tr);});}
+function updateItem(id,f,v){state.actionItems=state.actionItems.map(a=>a.id===id?{...a,[f]:v}:a);}
+function removeItem(id){state.actionItems=state.actionItems.filter(a=>a.id!==id);renderActionItems();}
+function addActionItem(){state.actionItems.push({id:Date.now(),owner:"",action:"",due:""});renderActionItems();}
+function copyEmail(){navigator.clipboard.writeText(document.getElementById("email-body").value).then(()=>showStatus("email-status","Copied!","info"));}
+async function pushToSmartsheet(){const btn=document.getElementById("btn-smartsheet");btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Pushing…';try{const t=await callProxy(`Add these action items to Smartsheet for project "${state.selectedProject?.name}" from meeting "${state.selectedMeeting?.title}". Find or create a sheet called "${state.selectedProject?.name} - Action Items" with columns: Owner, Action Item, Due Date. Items: ${JSON.stringify(state.actionItems)}. Confirm.`,["smartsheet"],"Use Smartsheet MCP. Confirm briefly.");showStatus("sheet-status",t||"Items pushed.","success");}catch{showStatus("sheet-status","Check Smartsheet.","info");}btn.disabled=false;btn.innerHTML='<i class="ti ti-table"></i> Push to Smartsheet';}
+async function sendEmail(){const btn=document.getElementById("btn-send");btn.disabled=true;btn.innerHTML='<div class="spinner"></div> Sending…';const body=document.getElementById("email-body").value;try{const t=await callProxy(`Send email to myself, subject "Meeting Recap - ${state.selectedMeeting?.title}", body:\n\n${body}\n\nUse Microsoft 365.`,["m365"],"Use M365 MCP to send. Confirm briefly.");showStatus("email-status",t||"Sent!","success");}catch{showStatus("email-status","Copy and send manually.","info");}btn.disabled=false;btn.innerHTML='<i class="ti ti-send"></i> Send recap';}
+function showStatus(id,msg,type){const el=document.getElementById(id);el.textContent=msg;el.className="status-msg status-"+type;el.style.display="inline-block";}
+renderSidebar();
+</script>
+</body>
+</html>
